@@ -21,7 +21,9 @@
 
 ---
 
-![主界面预览](./docs/preview.png)
+| 🌙 深色模式 | ☀️ 浅色模式 |
+|:---:|:---:|
+| ![深色模式](./docs/preview.png) | ![浅色模式](./docs/preview-light.png) |
 
 ## ✨ 特性
 

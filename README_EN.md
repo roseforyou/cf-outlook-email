@@ -21,7 +21,9 @@
 
 ---
 
-![Preview](./docs/preview.png)
+| 🌙 Dark | ☀️ Light |
+|:---:|:---:|
+| ![Dark mode](./docs/preview.png) | ![Light mode](./docs/preview-light.png) |
 
 ## ✨ Features
 
