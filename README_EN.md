@@ -17,7 +17,7 @@
 
 ⚠️ This button **cannot one-click deploy** this project: it relies on a D1 database and Secrets, which require manually creating the DB, running migrations, and setting secrets — the button fails at framework detection. Please follow the 📖 [Deployment Guide](./docs/GUIDE.md) instead (~5 min).
 
-🌐 [中文](./README.md) · 📖 [Deployment Guide](./docs/GUIDE.md)
+🌐 [中文](./README.md) · 📖 [Deployment Guide](./docs/GUIDE.md) · 🔌 [API Docs](./docs/API.md)
 
 </div>
 

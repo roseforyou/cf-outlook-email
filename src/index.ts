@@ -9,6 +9,7 @@ import emailRoutes from './routes/emails';
 import settingRoutes from './routes/settings';
 import tempEmailRoutes from './routes/tempEmails';
 import oauthRoutes from './routes/oauth';
+import externalRoutes from './routes/external';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -42,6 +43,9 @@ app.route('/api/auth', authRoutes);
 
 // OAuth callback (no auth middleware - handles redirect from Microsoft)
 app.route('/api/oauth', oauthRoutes);
+
+// External API (no cookie auth - uses its own API-key check)
+app.route('/api/external', externalRoutes);
 
 // Protected API routes
 app.use('/api/*', authMiddleware());

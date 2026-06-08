@@ -1087,7 +1087,43 @@ async function renderSettings(el) {
       </div>
       <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
     </div>
+
+    <div class="card" style="max-width:600px">
+      <h3 style="margin-bottom:8px">对外 API</h3>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.7;margin-bottom:16px">
+        用 API Key 免登录拉取邮件（适合脚本自动取验证码）。详见 <a href="https://github.com/roseforyou/cf-outlook-email/blob/main/docs/API.md" target="_blank">API 文档</a>。
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="sExternalKey" readonly value="${esc(settings.external_api_key || '')}" placeholder="未启用（点右侧生成）" style="flex:1;font-family:monospace;font-size:12px">
+          <button class="btn btn-sm" type="button" onclick="copyText(document.getElementById('sExternalKey').value, this)" ${settings.external_api_key ? '' : 'disabled'}>复制</button>
+        </div>
+      </div>
+      ${settings.external_api_key ? `<div class="form-group">
+        <label class="form-label">调用示例</label>
+        <input class="form-input" readonly value="${location.origin}/api/external/emails?email=你的邮箱&key=${esc(settings.external_api_key)}" style="font-family:monospace;font-size:11px" onclick="this.select()">
+      </div>` : ''}
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" type="button" onclick="generateApiKey()">${settings.external_api_key ? '重新生成' : '生成 API Key'}</button>
+        ${settings.external_api_key ? '<button class="btn btn-sm btn-danger" type="button" onclick="clearApiKey()">停用</button>' : ''}
+      </div>
+    </div>
   `;
+}
+
+async function generateApiKey() {
+  if (document.getElementById('sExternalKey')?.value && !confirm('重新生成会使旧 Key 立即失效，确认？')) return;
+  const res = await api('/settings/external-key', { method: 'POST' });
+  if (res?.success) { toast(res.message || '已生成'); navigate('settings'); }
+  else toast(res?.error?.message || '生成失败', 'error');
+}
+
+async function clearApiKey() {
+  if (!confirm('停用后对外 API 将无法使用，确认？')) return;
+  const res = await api('/settings/external-key', { method: 'DELETE' });
+  if (res?.success) { toast(res.message || '已停用'); navigate('settings'); }
+  else toast(res?.error?.message || '操作失败', 'error');
 }
 
 async function saveSettings() {

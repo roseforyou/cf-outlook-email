@@ -19,11 +19,36 @@ settings.get('/', async (c) => {
     } else if (row.key === 'gptmail_api_key') {
       data[row.key] = row.value ? maskToken(row.value) : '';
     } else {
+      // external_api_key is returned in full so the admin can copy it (page is behind login)
       data[row.key] = row.value;
     }
   }
 
   return ok(data);
+});
+
+// Generate a random hex key (no dependencies, Web Crypto)
+function genApiKey(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// POST /api/settings/external-key - (re)generate the external API key
+settings.post('/external-key', async (c) => {
+  const key = genApiKey();
+  await run(
+    c.env.DB,
+    `INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('external_api_key', ?, CURRENT_TIMESTAMP)`,
+    [key]
+  );
+  return ok({ external_api_key: key }, '已生成新的 API Key');
+});
+
+// DELETE /api/settings/external-key - disable the external API
+settings.delete('/external-key', async (c) => {
+  await run(c.env.DB, "DELETE FROM settings WHERE key = 'external_api_key'", []);
+  return ok(null, '已停用对外 API');
 });
 
 // PUT /api/settings
