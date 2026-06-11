@@ -1309,7 +1309,60 @@ async function renderSettings(el) {
         ${settings.external_api_key ? '<button class="btn btn-danger" type="button" onclick="clearApiKey()">停用</button>' : ''}
       </div>
     </div>
+
+    <div class="card" style="max-width:600px">
+      <h3 style="margin-bottom:8px">定时刷新 Token</h3>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.7;margin-bottom:16px">
+        定时自动刷新账号 Token，让长期不用的号也不过期。Cloudflare 每 6 小时唤醒一次，实际是否执行由下面的「间隔」决定。
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px">
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="sRefreshEnabled" ${settings.token_refresh_enabled === '1' ? 'checked' : ''}> 启用定时刷新
+        </label>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">间隔（小时）</label>
+          <input class="form-input" id="sRefreshInterval" type="number" min="6" value="${esc(settings.token_refresh_interval_hours || '24')}">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">每批数量（≤40）</label>
+          <input class="form-input" id="sRefreshBatch" type="number" min="1" max="40" value="${esc(settings.token_refresh_batch || '20')}">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">上次执行：${esc(settings.token_refresh_last_result || '尚未执行')}</div>
+      <div style="background:var(--warning-bg);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:12px;margin-bottom:14px;font-size:11.5px;color:var(--text-secondary);line-height:1.8">
+        <b style="color:var(--warning)">⚠️ 频率风险（请勿设太频繁）</b><br>
+        · <b>微软风控（最重要）</b>：refresh_token 每次刷新都会被微软轮换，高频自动刷新可能触发 Graph 限流（429），对「领来的」账号还可能被微软判定异常活动而<b>锁号</b>。Token 只要每隔几天被用到就不会过期，<b>没必要高频刷，建议间隔 ≥ 12 小时，默认 24 小时足够</b>。<br>
+        · <b>子请求限制</b>：免费层单次最多 50 个子请求，每个账号刷新占 1 个，故「每批」上限 40，超出的账号下一轮再刷。<br>
+        · <b>账号多时</b>：账号数 > 每批数量，会分多轮轮换刷新（按最久未刷新优先），不会一次刷完。<br>
+        · <b>请求配额</b>：免费层 10 万次/天，定时任务本身消耗极小，正常用不会触顶。
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" type="button" onclick="saveRefreshSettings()">保存</button>
+        <button class="btn" type="button" onclick="refreshTokensNow(this)">立即刷新一批</button>
+      </div>
+    </div>
   `;
+}
+
+async function saveRefreshSettings() {
+  const body = {
+    token_refresh_enabled: document.getElementById('sRefreshEnabled').checked ? '1' : '0',
+    token_refresh_interval_hours: document.getElementById('sRefreshInterval').value.trim() || '24',
+    token_refresh_batch: document.getElementById('sRefreshBatch').value.trim() || '20',
+  };
+  const res = await api('/settings', { method: 'PUT', body: JSON.stringify(body) });
+  if (res?.success) toast(res.message || '已保存');
+  else toast(res?.error?.message || '保存失败', 'error');
+}
+
+async function refreshTokensNow(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '刷新中...'; }
+  const res = await api('/settings/refresh-now', { method: 'POST' });
+  if (btn) { btn.disabled = false; btn.textContent = '立即刷新一批'; }
+  if (res?.success) { toast(res.message || '已刷新', 'success', 5000); navigate('settings'); }
+  else toast(res?.error?.message || '刷新失败', 'error');
 }
 
 async function generateApiKey() {
